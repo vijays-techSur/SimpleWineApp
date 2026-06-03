@@ -158,8 +158,10 @@ Out of scope for this FRD: Phase 2+ features (food pairing, CSV import/export, n
 2. System fetches all wine records, defaulting to sort by `date_added` descending (newest first).
 3. System renders each wine as a card (mobile) or table row (desktop) showing: Wine Name, Producer, Vintage, Wine Type badge, Readiness Status badge (from F05), Quantity, Storage Location.
 4. "Cellar Empty" wines (quantity = 0) are visually de-emphasized (muted opacity) but still shown by default.
-5. User may apply search or filters (see F03) to narrow the list.
-6. Active filter state is displayed as dismissible chips above the list.
+5. **Empty collection state:** If the user has no wine records at all (brand-new user or all records deleted), the Wine List displays an onboarding empty state: "Your cellar is empty. Tap '+' to add your first wine." with a prominent "Add Wine" CTA button. This applies in both R1 (before the dashboard is available) and R2.
+6. User may apply search or filters (see F03) to narrow the list.
+7. Active filter state is displayed as dismissible chips above the list.
+8. **Data load failure:** If the API fails to return wine data, the Wine List displays an inline error banner at the top of the view: "Unable to load wines. Pull to refresh or try again." The list area below the banner is empty; the "+" FAB remains accessible.
 
 #### F00.3 — Wine Detail View
 
@@ -168,6 +170,7 @@ Out of scope for this FRD: Phase 2+ features (food pairing, CSV import/export, n
 3. System renders all fields, grouped by section: Identity, Provenance & Purchase, Storage, Drinking Window, Tasting Notes (from F04), Bottle Event Log (from F01).
 4. Readiness Status badge is displayed prominently (derived from F05).
 5. Action buttons displayed: "Edit," "Open / Consume Bottle," "Add Tasting Note," "Delete."
+6. **Data load failure:** If the API fails to return the wine record, the detail view displays an inline error banner: "Unable to load wine details. Pull to refresh or try again." Action buttons are hidden until data loads successfully.
 
 #### F00.4 — Edit Wine
 
@@ -215,7 +218,7 @@ Out of scope for this FRD: Phase 2+ features (food pairing, CSV import/export, n
 | `bottle_size` | enum | Optional; one of: 375ML, 750ML, 1500ML, 3000ML; default 750ML if omitted |
 | `purchase_date` | date | Optional; ISO 8601 date (YYYY-MM-DD); must not be in the future |
 | `purchase_source` | string | Optional; 1–200 characters (e.g., "Wine.com," "Local shop") |
-| `purchase_price` | decimal | Optional; ≥ 0.00; up to 2 decimal places; currency assumed USD in v1 |
+| `purchase_price` | decimal | Optional; ≥ 0.00; up to 2 decimal places; currency assumed USD in v1. **UI label: "Purchase Price (per bottle)"** — displayed with helper text "Enter the price per individual bottle, not per case." to eliminate per-bottle vs. per-case ambiguity. |
 | `estimated_value` | decimal | Optional; ≥ 0.00; up to 2 decimal places; user-entered estimate per bottle |
 | `drink_window_start` | integer | Optional; 1900 ≤ value ≤ 2200; must be ≤ `drink_window_end` if both provided |
 | `drink_window_end` | integer | Optional; 1900 ≤ value ≤ 2200; must be ≥ `drink_window_start` if both provided |
@@ -534,8 +537,10 @@ Uses tables: `wines` (quantity, is_open columns), `bottle_events` — see `Y0-sc
 
 1. During Add Wine (F00.1) or Edit Wine (F00.4), the "Storage Location" field is a required dropdown select.
 2. System populates the dropdown with all existing location names, sorted alphabetically.
-3. A "Add new location..." option at the bottom of the dropdown opens the Create Location inline flow (F02.1) and returns the user to the wine form with the new location pre-selected.
-4. User must select a location before the form can be saved.
+3. **Pre-selection on Add Wine form:** The dropdown automatically pre-selects the most recently used storage location (the location last saved on any wine record in the current session). If no prior location exists, no default is pre-selected and the user must choose manually. This supports fast repeat-entry workflows (e.g., logging multiple bottles from the same purchase).
+4. On the Edit Wine form, the dropdown pre-selects the wine's current assigned location.
+5. A "Add new location..." option at the bottom of the dropdown opens the Create Location inline flow (F02.1) and returns the user to the wine form with the new location pre-selected.
+6. User must select a location before the form can be saved.
 
 #### F02.6 — Location List View
 
@@ -665,7 +670,7 @@ Uses tables: `storage_locations`, `wines` (FK `storage_location_id`, flag `locat
 1. Search bar is permanently visible at the top of the Wine List view.
 2. User types into the search bar.
 3. System applies the search client-side with no server request, filtering in real time (debounce: 100ms after last keystroke).
-4. Matching fields: `wine_name`, `producer`, `region`, `grape_variety`. Match is case-insensitive, substring match (e.g., "cab" matches "Cabernet Sauvignon").
+4. Matching fields: `wine_name`, `producer`, `region`, `grape_variety`, and `occasion` (from the most recent tasting note for each wine). Match is case-insensitive, substring match (e.g., "cab" matches "Cabernet Sauvignon"; "anniversary" matches wines whose most recent tasting note occasion field contains "anniversary").
 5. Wine list updates immediately to show only matching records.
 6. If no wines match, system displays: "No wines match your search. Try a different term or clear filters."
 7. Search query is treated as an additive filter alongside any active panel filters (AND logic: results must satisfy both search AND all active filters).
@@ -690,7 +695,7 @@ Uses tables: `storage_locations`, `wines` (FK `storage_location_id`, flag `locat
 
    **Storage Location (F03.7):** Dropdown of all defined locations plus "Location Unknown" option. Single-select.
 
-   **Drinking Readiness (F03.8):** Multi-select checkboxes: Drink Now, Approaching Peak, Hold, Past Window, No Window Set. OR logic within this filter.
+   **Drinking Readiness (F03.8):** Multi-select checkboxes: Drink Now, Approaching Peak, Hold, Past Window, No Window Set. OR logic within this filter. **All readiness status filter options (Drink Now, Approaching Peak, Hold, Past Window) return only wines with quantity > 0** — the user is looking for bottles they can actually open. The "No Window Set" filter also excludes quantity = 0 wines. This rule is consistent across all readiness filter options.
 
    **Rating Range (F03.9):** Two inputs: "Min rating" and "Max rating." On 5-star scale: 1–5 (integers). On 100-point scale: 1–100. Only active if at least one tasting note with a rating exists in the collection. Filters wines by their most recent tasting note rating.
 
@@ -724,8 +729,11 @@ Uses tables: `storage_locations`, `wines` (FK `storage_location_id`, flag `locat
    - **Quantity: Low → High**
    - **Rating: Highest first** (sorts by most recent tasting note rating; unrated wines sorted last)
    - **Rating: Lowest first** (unrated wines sorted last)
-3. Sort applies to the filtered result set (sort happens after filter/search).
-4. Selected sort option persists for the session.
+   - **Drinking Window End: Soonest first** (lowest `drink_window_end` year first — most urgently expiring bottles surface first; wines with no end year sorted last)
+   - **Drinking Window End: Latest first** (highest `drink_window_end` year first; wines with no end year sorted last)
+3. **Default sort when Drink Now filter is active:** When the Drinking Readiness filter is set to "Drink Now" (and no other sort has been explicitly selected by the user), the sort automatically defaults to "Drinking Window End: Soonest first." This ensures the most urgently expiring bottles always surface at the top of the Drink Now list. Explicitly selecting a different sort overrides this default.
+4. Sort applies to the filtered result set (sort happens after filter/search).
+5. Selected sort option persists for the session.
 
 ---
 
@@ -733,7 +741,7 @@ Uses tables: `storage_locations`, `wines` (FK `storage_location_id`, flag `locat
 
 | Input | Type | Constraints |
 |-------|------|------------|
-| `search_query` | string | Optional; 0–200 characters; applied client-side |
+| `search_query` | string | Optional; 0–200 characters; applied client-side; matched against `wine_name`, `producer`, `region`, `grape_variety`, and `occasion` (most recent tasting note) |
 | `filter.wine_type` | enum[] | Optional; subset of [RED, WHITE, ROSE, SPARKLING, DESSERT, FORTIFIED] |
 | `filter.producer` | string | Optional; exact match (case-insensitive) |
 | `filter.country` | string | Optional; exact match (case-insensitive) |
@@ -776,7 +784,7 @@ Uses tables: `storage_locations`, `wines` (FK `storage_location_id`, flag `locat
 | No wines match combined filters | Empty state in wine list | "No wines match your search. Try a different term or clear filters." |
 | Vintage range invalid (from > to) | Inline on filter panel | "Start year must be before or equal to end year." |
 | Rating range invalid (min > max) | Inline on filter panel | "Min rating must be less than or equal to max rating." |
-| Collection is empty (no wines at all) | Empty state | "Your cellar is empty. Add your first wine to get started." |
+| Collection is empty (no wines at all) | Empty state with CTA | "Your cellar is empty. Tap '+' to add your first wine." with prominent Add Wine CTA button (see F00.2 §5) |
 
 ---
 
@@ -788,7 +796,7 @@ See `Y1-api.md §F03 — Search & Filter` for query parameter spec on `GET /api/
 
 | Parameter | Type | Purpose |
 |-----------|------|---------|
-| `q` | string | Full-text search query |
+| `q` | string | Full-text search query; matched against name, producer, region, grape, and occasion (most recent tasting note) |
 | `wine_type` | string | Comma-separated enum values |
 | `producer` | string | Exact match filter |
 | `country` | string | Exact match filter |
@@ -806,7 +814,7 @@ See `Y1-api.md §F03 — Search & Filter` for query parameter spec on `GET /api/
 
 ### Schema Surface (this feature)
 
-Search and filter operate against the `wines` table (with JOINs to `storage_locations` and `tasting_notes` for rating filter). No additional schema tables introduced by this feature. Readiness status is calculated at query time from `drink_window_start`, `drink_window_end`, and `CURRENT_DATE` — see `Y0-schema.md §Wines` and `F05 §Process`.
+Search and filter operate against the `wines` table (with JOINs to `storage_locations` and `tasting_notes` for rating filter and occasion search). Full-text search on `occasion` requires a JOIN to the most recent `tasting_note` per wine (by `date_tasted` descending). No additional schema tables introduced by this feature. Readiness status is calculated at query time from `drink_window_start`, `drink_window_end`, and `CURRENT_DATE` — see `Y0-schema.md §Wines` and `F05 §Process`.
 
 ---
 ---

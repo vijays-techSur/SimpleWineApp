@@ -225,7 +225,7 @@ When a guest I have hosted before is joining an upcoming dinner, I want to see w
 
 **Hiring Criteria:**
 - Tasting note entry includes an optional Occasion field and optional Guest Feedback field
-- Past tasting notes are listed chronologically on the wine detail view and searchable by occasion text
+- Past tasting notes are listed chronologically on the wine detail view; occasions are searchable via the main wine list search bar (which matches against the occasion field of each wine's most recent tasting note)
 - Occasion notes are visible without opening a separate journal or document
 
 **Success Measure:** Priya can retrieve the occasion and guest context for at least one past gathering via the tasting note history within 30 seconds of opening a wine record.

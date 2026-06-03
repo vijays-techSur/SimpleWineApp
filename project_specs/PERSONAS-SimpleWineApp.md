@@ -131,7 +131,7 @@ Priya is a 41-year-old product director who hosts dinner parties, holiday gather
 **Success Criteria:**
 - Can filter to "Sparkling, Drink Now" in ≤ 3 taps from the home screen
 - Collection quantity stays accurate — she updates it after each event without friction
-- Can recall what was served at a past occasion via tasting note occasion field
+- Can recall what was served at a past occasion via the tasting note occasion field; searching for an occasion keyword (e.g., "anniversary") in the main search bar surfaces wines whose most recent tasting note matches
 - Opens the app before every gathering instead of doing a physical shelf walk
 
 ---

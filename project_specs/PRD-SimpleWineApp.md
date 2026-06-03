@@ -168,7 +168,7 @@ This application addresses these problems by giving the user a centralized, stru
 
 **Capabilities:**
 
-- **Full-text search bar** — searches across wine name, producer, region, and grape fields; results update as user types (client-side filter, no server round-trip required)
+- **Full-text search bar** — searches across wine name, producer, region, grape fields, and occasion (from the wine's most recent tasting note); results update as user types (client-side filter, no server round-trip required)
 - **Filter panel / drawer** (collapsible on mobile) supporting filter by:
   - Wine type (Red, White, Rosé, Sparkling, Dessert, Fortified)
   - Producer
@@ -180,7 +180,8 @@ This application addresses these problems by giving the user a centralized, stru
   - Personal rating range (once rated; see F4)
 - Active filters displayed as dismissible chips above the wine list
 - "Clear all filters" control
-- Sort options: Wine Name (A–Z), Vintage (newest / oldest), Quantity (high / low), Date Added (newest / oldest), Rating (highest / lowest)
+- Sort options: Wine Name (A–Z), Vintage (newest / oldest), Quantity (high / low), Date Added (newest / oldest), Rating (highest / lowest), Drinking Window End (soonest / latest first)
+- When the Drink Now readiness filter is active and no explicit sort has been selected, the default sort is Drinking Window End: Soonest first
 - Filter state persists during the session; resets on app close
 
 **Priority:** P0 (Critical — MVP requirement)

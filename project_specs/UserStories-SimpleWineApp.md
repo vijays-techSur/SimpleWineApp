@@ -66,6 +66,8 @@ The foundational capability for the entire application. All other features depen
 - [ ] Wines with quantity = 0 ("Cellar Empty") are visually de-emphasized but still visible in the list
 - [ ] The list renders within 300ms for collections up to 500 records on a mid-range mobile device
 - [ ] Active filter chips are displayed above the list when any filters are applied
+- [ ] If the collection has no wine records at all (brand-new user or all records deleted), the Wine List displays: "Your cellar is empty. Tap '+' to add your first wine." with a prominent "Add Wine" CTA button
+- [ ] If the wine list fails to load due to an API error, an inline error banner displays: "Unable to load wines. Pull to refresh or try again." The "+" FAB remains accessible
 
 **Priority:** P0 | **Feature Ref:** F0
 
@@ -80,6 +82,7 @@ The foundational capability for the entire application. All other features depen
 - [ ] The Readiness Status badge is displayed prominently in the header area
 - [ ] Action buttons are visible: "Edit," "Open / Consume Bottle," "Add Tasting Note," "Delete"
 - [ ] The view loads correctly for wines with no tasting notes and no bottle events
+- [ ] If the wine detail fails to load due to an API error, an inline error banner displays: "Unable to load wine details. Pull to refresh or try again." Action buttons are hidden until data loads successfully
 
 **Priority:** P0 | **Feature Ref:** F0
 
@@ -253,6 +256,8 @@ Allows users to define and manage named physical storage locations, assign wines
 **Acceptance Criteria:**
 - [ ] The Storage Location field is a required dropdown on the Add Wine and Edit Wine forms
 - [ ] The dropdown lists all existing locations in alphabetical order
+- [ ] On the Add Wine form, the dropdown automatically pre-selects the most recently used storage location from the current session; if no prior location exists, no default is pre-selected
+- [ ] On the Edit Wine form, the dropdown pre-selects the wine's current assigned location
 - [ ] A "Add new location..." option at the bottom of the dropdown opens the Create Location flow inline and returns with the new location pre-selected
 - [ ] The form cannot be saved without a storage location selected
 - [ ] Wines with `location_unknown = true` display a "Location Unknown" warning on the wine card and detail view
@@ -273,7 +278,7 @@ Provides fast, flexible discovery mechanisms to find the right bottle — whethe
 **Acceptance Criteria:**
 - [ ] A search bar is permanently visible at the top of the Wine List view
 - [ ] Typing updates the wine list in real time (client-side, debounced at 100ms after last keystroke)
-- [ ] Search matches against `wine_name`, `producer`, `region`, and `grape_variety` fields; matching is case-insensitive and substring-based
+- [ ] Search matches against `wine_name`, `producer`, `region`, `grape_variety`, and `occasion` (from the most recent tasting note for each wine); matching is case-insensitive and substring-based
 - [ ] A "×" clear button appears in the search bar when text is present; tapping it clears the query and restores the full list
 - [ ] If no wines match, the list shows: "No wines match your search. Try a different term or clear filters."
 - [ ] Search results respect any simultaneously active panel filters (AND logic)
@@ -305,7 +310,8 @@ Provides fast, flexible discovery mechanisms to find the right bottle — whethe
 - [ ] One dismissible chip per active filter dimension appears above the wine list (e.g., "Type: Red, White", "Vintage: 2015–2020")
 - [ ] Tapping a chip's "×" dismisses that individual filter
 - [ ] A "Clear all" link appears next to the chips when any filter is active; tapping it clears all panel filters (does not clear the search bar)
-- [ ] A sort control at the top-right of the list offers: Date Added (newest/oldest), Wine Name (A–Z / Z–A), Vintage (newest/oldest), Quantity (high/low), Rating (highest/lowest)
+- [ ] A sort control at the top-right of the list offers: Date Added (newest/oldest), Wine Name (A–Z / Z–A), Vintage (newest/oldest), Quantity (high/low), Rating (highest/lowest), Drinking Window End (soonest/latest first; wines with no end year sorted last)
+- [ ] When the Drinking Readiness filter is set to "Drink Now" and no other sort has been explicitly selected, the sort automatically defaults to "Drinking Window End: Soonest first" so the most urgently expiring bottles surface at the top
 - [ ] Selected sort applies after filtering/searching (sort is applied last)
 - [ ] Selected sort persists for the session
 
@@ -445,7 +451,7 @@ Automatically calculates and displays a readiness status for every wine, giving 
 - [ ] The filter panel includes a multi-select "Drinking Readiness" filter with options: Drink Now, Approaching Peak, Hold, Past Window, No Window Set
 - [ ] Selecting multiple readiness statuses returns wines matching any selected status (OR logic within filter)
 - [ ] The Drink Now filter on the wine list is reachable in ≤ 3 taps from the home screen
-- [ ] Filtering by "Drink Now" shows only wines with `readiness_status = DRINK_NOW` and quantity > 0
+- [ ] All readiness status filter options (Drink Now, Approaching Peak, Hold, Past Window, No Window Set) return only wines with quantity > 0 — wines with quantity = 0 are excluded from readiness filter results regardless of which status is selected
 
 **Priority:** P1 | **Feature Ref:** F5
 
